@@ -15,7 +15,7 @@ import (
 func getVICEProxy() *VICEProxy {
 	// Create a session store for testing
 	authkey := make([]byte, 64)
-	rand.Read(authkey)
+	_, _ = rand.Read(authkey)
 	sessionStore := sessions.NewCookieStore(authkey)
 
 	return &VICEProxy{
@@ -85,7 +85,7 @@ func TestProxyWithAuthDisabled(t *testing.T) {
 	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		backendCalled = true
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("backend response"))
+		_, _ = w.Write([]byte("backend response"))
 	}))
 	defer backend.Close()
 
@@ -118,7 +118,7 @@ func TestProxyWithAuthEnabled(t *testing.T) {
 	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		backendCalled = true
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("backend response"))
+		_, _ = w.Write([]byte("backend response"))
 	}))
 	defer backend.Close()
 

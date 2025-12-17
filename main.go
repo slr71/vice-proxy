@@ -83,7 +83,7 @@ func (c *VICEProxy) getResourceName(externalID string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	//log.Debugf("end of resource name lookup for %s at %s", externalID, c.getAnalysisIDBase)
 
 	analysis := &Analysis{}
@@ -164,7 +164,7 @@ func (c *VICEProxy) IsAllowed(user, resource string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	//log.Debugf("end of permissions lookup for user %s on resource %s at %s", user, resource, c.checkResourceAccessBase)
 
 	b, err := io.ReadAll(resp.Body)
@@ -227,7 +227,7 @@ func (c *VICEProxy) FetchKeycloakCerts() (jwk.Set, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -337,7 +337,7 @@ func (c *VICEProxy) HandleAuthorizationCode(w http.ResponseWriter, r *http.Reque
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Extract the token from the response.
 	log.Debug("reading the response from Keycloak")
@@ -564,7 +564,7 @@ func (c *VICEProxy) URLIsReady(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if ready {
-		fmt.Fprint(w, string(body))
+		_, _ = fmt.Fprint(w, string(body))
 	} else {
 		http.Error(w, string(body), http.StatusNotAcceptable)
 	}
