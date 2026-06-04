@@ -773,13 +773,25 @@ func (c *VICEProxy) isWebsocket(r *http.Request) bool {
 	return strings.ToLower(r.Header.Get("Upgrade")) == "websocket"
 }
 
+// readinessClient deliberately does not follow redirects so that a backend
+// answering with a 3xx (e.g. RStudio's unsupported-browser redirect for the
+// non-browser User-Agent used here) counts as "up", matching kubelet's HTTP
+// probe semantics. Following the redirect chases an external URL that 404s and
+// would wrongly report a healthy backend as down, leaving the pod stuck at 1/2.
+var readinessClient = &http.Client{
+	Timeout: 5 * time.Second,
+	CheckRedirect: func(*http.Request, []*http.Request) error {
+		return http.ErrUseLastResponse
+	},
+}
+
 // backendIsReady returns true when the backend responds with a 2xx or 3xx status.
-// Uses http.Get without a context because this is a health-check polling call
-// with no ambient request context; the server-level ReadTimeout bounds it.
+// Uses a context-free poll because this is a health-check with no ambient request
+// context; readinessClient.Timeout bounds it.
 //
 //nolint:noctx // no request context available in health-check polling
 func (c *VICEProxy) backendIsReady(backendURL string) (bool, error) {
-	resp, err := http.Get(backendURL) //nolint:noctx
+	resp, err := readinessClient.Get(backendURL) //nolint:noctx
 	if err != nil {
 		return false, err
 	}
